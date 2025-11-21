@@ -1,5 +1,6 @@
 package com.example.webtestingia.controller;
 
+import com.example.webtestingia.model.ApiResponse;
 import com.example.webtestingia.service.LocatorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,17 +33,17 @@ public class LocatorController {
      * Lista todos los locators de un proyecto.
      */
     @GetMapping
-    public ResponseEntity<Map<String, Map<String, String>>> listar(@PathVariable String proyecto) {
+    public ResponseEntity<Map<String, Object>> listar(@PathVariable String proyecto) {
         LOGGER.info("Listando locators de {}", proyecto);
-        return ResponseEntity.ok(locatorService.obtenerLocators(proyecto));
+        return ApiResponse.ok(locatorService.obtenerLocators(proyecto));
     }
 
     /**
      * Devuelve un grupo específico de locators.
      */
     @GetMapping("/{grupo}")
-    public ResponseEntity<Map<String, String>> grupo(@PathVariable String proyecto, @PathVariable String grupo) {
+    public ResponseEntity<Map<String, Object>> grupo(@PathVariable String proyecto, @PathVariable String grupo) {
         LOGGER.info("Obteniendo grupo {} de {}", grupo, proyecto);
-        return ResponseEntity.ok(locatorService.obtenerGrupo(proyecto, grupo));
+        return ApiResponse.ok(locatorService.obtenerGrupo(proyecto, grupo));
     }
 }
