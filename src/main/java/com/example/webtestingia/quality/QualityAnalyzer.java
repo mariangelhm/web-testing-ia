@@ -13,7 +13,6 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +26,13 @@ public class QualityAnalyzer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QualityAnalyzer.class);
     private static final String CONFIG_PATH = "config/quality-rules.yml";
+    private static final Map<String, String> MOTIVOS_REGLAS = Map.of(
+            "R1", "Asegura que el caso incluya al menos una validación observable (Then) para confirmar resultados; es buena práctica de QA porque evita flujos sin aserciones.",
+            "R2", "Un nombre descriptivo comunica claramente el objetivo del escenario y facilita el mantenimiento; buena práctica de QA para identificar cobertura rápidamente.",
+            "R3", "Limitar a 20 pasos mantiene los escenarios legibles y estables; buena práctica de QA para reducir flakiness y tiempos de ejecución.",
+            "R4", "Requiere validaciones Then para capturar comportamientos esperados; buena práctica de QA para detectar regresiones visibles.",
+            "R5", "El uso coherente de Given/When/Then mantiene la narrativa Gherkin y la comprensibilidad; buena práctica de QA para equipos multidisciplinarios."
+    );
 
     private List<QualityRule> reglasActivas;
 
@@ -49,12 +55,15 @@ public class QualityAnalyzer {
 
         for (QualityRule regla : reglasActivas) {
             boolean cumple = evaluarRegla(regla, contenido);
+            String motivo = construirMotivo(regla);
             if (cumple) {
                 acumulado += regla.getPeso();
                 cumplidas.add(regla.getId());
+                result.getDetalleReglas().put(regla.getId(), motivo);
             } else {
                 falladas.add(regla.getId());
-                sugerencias.add("Mejorar para cumplir la regla: " + regla.getNombre());
+                sugerencias.add(motivo);
+                result.getDetalleReglas().put(regla.getId(), motivo);
             }
         }
         result.setPuntaje(pesoTotal == 0 ? 0 : acumulado / pesoTotal);
@@ -64,6 +73,13 @@ public class QualityAnalyzer {
         return result;
     }
 
+    /**
+     * Evalúa una regla específica contra el contenido Gherkin recibido.
+     *
+     * @param regla     regla de calidad configurada.
+     * @param contenido texto completo del escenario.
+     * @return true si cumple la condición de la regla, false en caso contrario.
+     */
     private boolean evaluarRegla(QualityRule regla, String contenido) {
         String lower = contenido.toLowerCase();
         return switch (regla.getId()) {
@@ -73,6 +89,16 @@ public class QualityAnalyzer {
             case "R5" -> lower.contains("given") && lower.contains("when") && lower.contains("then");
             default -> true;
         };
+    }
+
+    /**
+     * Construye el mensaje que explica el motivo y la buena práctica asociada a una regla.
+     *
+     * @param regla regla evaluada.
+     * @return texto descriptivo que se expone en sugerencias y detalle de reglas.
+     */
+    private String construirMotivo(QualityRule regla) {
+        return regla.getId() + " - " + MOTIVOS_REGLAS.getOrDefault(regla.getId(), regla.getDescripcion());
     }
 
     private void cargarReglas() {
