@@ -1,5 +1,6 @@
 package com.example.webtestingia.controller;
 
+import com.example.webtestingia.model.ApiResponse;
 import com.example.webtestingia.model.ProjectMetadata;
 import com.example.webtestingia.service.ProjectDiscoveryService;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controlador REST para exponer operaciones sobre proyectos detectados en el sistema de archivos.
@@ -39,9 +41,9 @@ public class ProyectoController {
      * @return lista de metadatos.
      */
     @GetMapping
-    public ResponseEntity<List<ProjectMetadata>> listar() {
+    public ResponseEntity<Map<String, Object>> listar() {
         LOGGER.info("Listando proyectos");
-        return ResponseEntity.ok(discoveryService.listarProyectos());
+        return ApiResponse.ok(discoveryService.listarProyectos());
     }
 
     /**
@@ -51,9 +53,9 @@ public class ProyectoController {
      * @return metadata completa.
      */
     @GetMapping("/{proyecto}")
-    public ResponseEntity<ProjectMetadata> obtener(@PathVariable String proyecto) {
+    public ResponseEntity<Map<String, Object>> obtener(@PathVariable String proyecto) {
         LOGGER.info("Cargando proyecto {}", proyecto);
-        return ResponseEntity.ok(discoveryService.obtenerProyecto(proyecto));
+        return ApiResponse.ok(discoveryService.obtenerProyecto(proyecto));
     }
 
     /**
@@ -64,8 +66,8 @@ public class ProyectoController {
      * @return metadata persistida.
      */
     @PutMapping("/{proyecto}")
-    public ResponseEntity<ProjectMetadata> actualizar(@PathVariable String proyecto, @RequestBody ProjectMetadata metadata) {
+    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable String proyecto, @RequestBody ProjectMetadata metadata) {
         LOGGER.info("Actualizando project.json de {}", proyecto);
-        return ResponseEntity.ok(discoveryService.actualizarProyecto(proyecto, metadata));
+        return ApiResponse.ok(discoveryService.actualizarProyecto(proyecto, metadata));
     }
 }

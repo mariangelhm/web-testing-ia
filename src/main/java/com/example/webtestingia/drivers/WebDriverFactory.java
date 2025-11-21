@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -76,9 +77,9 @@ public class WebDriverFactory {
 
     private WebDriver crearLocal(String tipo) {
         return switch (tipo.toLowerCase()) {
-            case "firefox" -> new FirefoxDriver(new FirefoxOptions());
-            case "edge" -> new EdgeDriver(new EdgeOptions());
-            default -> new ChromeDriver(new ChromeOptions());
+            case "firefox" -> maximized(new FirefoxDriver(firefoxOptions()));
+            case "edge" -> maximized(new EdgeDriver(edgeOptions()));
+            default -> maximized(new ChromeDriver(chromeOptions()));
         };
     }
 
@@ -86,5 +87,43 @@ public class WebDriverFactory {
         DesiredCapabilities caps = new DesiredCapabilities();
         caps.setBrowserName(tipo);
         return new RemoteWebDriver(new URL(gridUrl), caps);
+    }
+
+    private ChromeOptions chromeOptions() {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--start-maximized");
+        options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
+        options.setExperimentalOption("useAutomationExtension", false);
+        return options;
+    }
+
+    private EdgeOptions edgeOptions() {
+        EdgeOptions options = new EdgeOptions();
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--start-maximized");
+        options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
+        options.setExperimentalOption("useAutomationExtension", false);
+        return options;
+    }
+
+    private FirefoxOptions firefoxOptions() {
+        FirefoxOptions options = new FirefoxOptions();
+        options.addArguments("-width=1920");
+        options.addArguments("-height=1080");
+        options.addPreference("dom.webdriver.enabled", false);
+        options.addPreference("useAutomationExtension", false);
+        return options;
+    }
+
+    private WebDriver maximized(WebDriver driver) {
+        try {
+            driver.manage().window().maximize();
+        } catch (Exception e) {
+            LOGGER.warn("No se pudo maximizar la ventana del navegador", e);
+        }
+        return driver;
     }
 }
