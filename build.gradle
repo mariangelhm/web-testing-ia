@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'org.yaml:snakeyaml:2.2'
+    implementation 'io.github.bonigarcia:webdrivermanager:5.8.0'
+    implementation 'org.seleniumhq.selenium:selenium-java:4.18.1'
+    implementation 'com.company.qa:qa-core:1.0.3'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.cucumber:cucumber-java:7.15.0'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+task runCucumber(type: JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'io.cucumber.core.cli.Main'
+
+    def tags = project.findProperty('cucumber.tags') ?: ''
+
+    args = [
+            '--plugin', 'pretty',
+            '--plugin', 'json:build/cucumber.json',
+            '--plugin', 'junit:build/cucumber.xml',
+            '--glue', 'com.example.webtestingia.steps',
+            '--glue', 'com.example.webtestingia.hooks',
+            'src/test/resources/features'
+    ]
+
+    if (tags) {
+        args += ['--tags', tags]
+    }
+}
+
