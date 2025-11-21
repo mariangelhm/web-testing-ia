@@ -6,26 +6,57 @@ plugins {
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
+
 java {
     sourceCompatibility = JavaVersion.VERSION_17
 }
 
 repositories {
     mavenCentral()
+
+    maven {
+        url = uri("https://maven.pkg.github.com/mariangelhm/qa-core")
+        credentials {
+            username = project.findProperty("gpr.user")
+                    ?: System.getenv("GITHUB_USERNAME")
+                    ?: "mariangelhm"
+
+            password = project.findProperty("gpr.key")
+                    ?: System.getenv("GITHUB_TOKEN")
+        }
+        content {
+            includeGroup "com.company.qa"   // MUY IMPORTANTE
+        }
+    }
 }
 
+
 dependencies {
+
+    /* Spring Boot */
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    /* Utilidades */
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'org.yaml:snakeyaml:2.2'
+
+    /* Web testing */
     implementation 'io.github.bonigarcia:webdrivermanager:5.8.0'
     implementation 'org.seleniumhq.selenium:selenium-java:4.18.1'
+
+    /* Cucumber (NECESARIO EN MAIN PARA STEPS Y HOOKS) */
+    implementation 'io.cucumber:cucumber-java:7.15.0'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
+
+    /* Engine solo para test */
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
+
+    /* QA CORE desde GitHub Packages */
     implementation 'com.company.qa:qa-core:1.0.3'
 
+    /* TEST */
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'io.cucumber:cucumber-java:7.15.0'
-    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
 }
 
 tasks.named('test') {
@@ -51,4 +82,3 @@ task runCucumber(type: JavaExec) {
         args += ['--tags', tags]
     }
 }
-
