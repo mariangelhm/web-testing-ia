@@ -55,7 +55,7 @@ public class RecorderController {
     /**
      * Registra un evento generado desde el frontend y lo mapea a pasos Gherkin.
      */
-    @PostMapping("/event")
+    @PostMapping({"/event", "/event/", "/event/**"})
     public ResponseEntity<Map<String, Object>> event(@RequestBody Map<String, Object> payload, @RequestParam(required = false) String proyecto, @RequestParam(required = false) String grupo) {
         recorderService.procesarEvento(proyecto, grupo, payload);
         return ApiResponse.ok(Map.of("mensaje", "Evento procesado"));
