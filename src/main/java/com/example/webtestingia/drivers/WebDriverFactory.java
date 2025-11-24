@@ -3,6 +3,8 @@ package com.example.webtestingia.drivers;
 import com.example.webtestingia.model.exception.BrowserException;
 import com.example.webtestingia.model.exception.InvalidConfigurationException;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -76,9 +79,9 @@ public class WebDriverFactory {
 
     private WebDriver crearLocal(String tipo) {
         return switch (tipo.toLowerCase()) {
-            case "firefox" -> new FirefoxDriver(new FirefoxOptions());
-            case "edge" -> new EdgeDriver(new EdgeOptions());
-            default -> new ChromeDriver(new ChromeOptions());
+            case "firefox" -> visibleWindow(new FirefoxDriver(firefoxOptions()));
+            case "edge" -> visibleWindow(new EdgeDriver(edgeOptions()));
+            default -> visibleWindow(new ChromeDriver(chromeOptions()));
         };
     }
 
@@ -86,5 +89,42 @@ public class WebDriverFactory {
         DesiredCapabilities caps = new DesiredCapabilities();
         caps.setBrowserName(tipo);
         return new RemoteWebDriver(new URL(gridUrl), caps);
+    }
+
+    private ChromeOptions chromeOptions() {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--disable-infobars");
+        options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
+        options.setExperimentalOption("useAutomationExtension", false);
+        return options;
+    }
+
+    private EdgeOptions edgeOptions() {
+        EdgeOptions options = new EdgeOptions();
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--disable-infobars");
+        options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
+        options.setExperimentalOption("useAutomationExtension", false);
+        return options;
+    }
+
+    private FirefoxOptions firefoxOptions() {
+        FirefoxOptions options = new FirefoxOptions();
+        options.addArguments("-width=1920");
+        options.addArguments("-height=1080");
+        options.addPreference("dom.webdriver.enabled", false);
+        options.addPreference("useAutomationExtension", false);
+        return options;
+    }
+
+    private WebDriver visibleWindow(WebDriver driver) {
+        try {
+            driver.manage().window().setPosition(new Point(0, 0));
+            driver.manage().window().setSize(new Dimension(1280, 900));
+        } catch (Exception e) {
+            LOGGER.warn("No se pudo ajustar la ventana del navegador", e);
+        }
+        return driver;
     }
 }

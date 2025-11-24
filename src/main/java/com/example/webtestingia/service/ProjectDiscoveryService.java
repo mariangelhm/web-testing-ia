@@ -80,8 +80,8 @@ public class ProjectDiscoveryService {
                 .map(TestCaseSummary::getCalidad)
                 .filter(java.util.Objects::nonNull)
                 .toList();
-        double promedio = calidades.isEmpty() ? 0.0 : calidades.stream().mapToDouble(QualityResult::getPuntaje).average().orElse(0.0);
-        metadata.setCasos(casos.stream().map(TestCaseSummary::getRuta).collect(Collectors.toList()));
+        double promedio = calidades.isEmpty() ? 0.0 : calidades.stream().mapToDouble(QualityResult::getScore).average().orElse(0.0);
+        metadata.setCases(casos.stream().map(TestCaseSummary::getRuta).collect(Collectors.toList()));
         LOGGER.info("Proyecto {} cargado con {} casos y calidad promedio {}", proyecto, casos.size(), promedio);
         return metadata;
     }
@@ -134,9 +134,9 @@ public class ProjectDiscoveryService {
     private void validarMetadata(ProjectMetadata metadata) {
         List<String> faltantes = new ArrayList<>();
         if (metadata.getId() == null || metadata.getId().isBlank()) faltantes.add("id");
-        if (metadata.getNombre() == null || metadata.getNombre().isBlank()) faltantes.add("nombre");
-        if (metadata.getCodigoJira() == null || metadata.getCodigoJira().isBlank()) faltantes.add("codigoJira");
-        if (metadata.getTipo() == null || metadata.getTipo().isBlank()) faltantes.add("tipo");
+        if (metadata.getName() == null || metadata.getName().isBlank()) faltantes.add("name");
+        if (metadata.getJiraCode() == null || metadata.getJiraCode().isBlank()) faltantes.add("jiraCode");
+        if (metadata.getType() == null || metadata.getType().isBlank()) faltantes.add("type");
         if (!faltantes.isEmpty()) {
             throw new IllegalArgumentException("Campos obligatorios faltantes: " + String.join(", ", faltantes));
         }

@@ -44,12 +44,21 @@ public class RecorderService {
     public Map<String, Object> finalizarSesion(String sessionId) {
         List<String> steps = sessionManager.closeSession(sessionId);
         String escenario = "Scenario: Flujo grabado\n" + String.join("\n", steps);
-        QualityResult calidad = qualityAnalyzer.analizarCaso(escenario);
+        QualityResult quality = qualityAnalyzer.analizarCaso(escenario);
+        double roundedScore = java.math.BigDecimal.valueOf(quality.getScore())
+                .setScale(2, java.math.RoundingMode.HALF_UP)
+                .doubleValue();
+        quality.setScore(roundedScore);
         LOGGER.info("Sesión {} finalizada con {} pasos", sessionId, steps.size());
         return Map.of(
                 "steps", steps,
-                "calidad", calidad,
-                "sugerencias", calidad.getSugerencias()
+                "quality", Map.of(
+                        "score", quality.getScore(),
+                        "passedRules", quality.getPassedRules(),
+                        "failedRules", quality.getFailedRules(),
+                        "suggestions", quality.getSuggestions(),
+                        "ruleDetails", quality.getRuleDetails()
+                )
         );
     }
 }
