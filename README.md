@@ -2,6 +2,62 @@
 
 Backend de referencia para gestionar proyectos de automatización web sin base de datos. La aplicación descubre proyectos por carpeta, analiza calidad de casos Gherkin, expone APIs REST para locators y grabaciones multiusuario, y ejecuta steps genéricos compatibles con Cucumber.
 
+## Formato de respuestas
+- **Éxito**: todo se devuelve dentro de `data`.
+- **Error**: todo se devuelve dentro de `notifications` (códigos y tipos incluidos) evitando errores HTTP 500.
+
+```json
+// Ejemplo de respuesta exitosa
+{
+  "data": {
+    "sessionId": "6f4f9f5e-72cf-4af3-8e55-09a4c9ae5e2a"
+  }
+}
+
+// Ejemplo de respuesta con error controlado
+{
+  "notifications": [
+    {
+      "message": "Validación fallida",
+      "detail": [
+        { "field": "ruta", "message": "no debe estar vacío" }
+      ],
+      "code": 400,
+      "type": "ValidationError"
+    }
+  ]
+}
+```
+
+### Cuerpos de ejemplo listos para usar
+```json
+// Crear o actualizar metadata de proyecto
+{
+  "id": "demo-web",
+  "nombre": "Demo web",
+  "codigoJira": "WEB-10",
+  "tipo": "web",
+  "autor": "QA",
+  "editor": "QA",
+  "casos": []
+}
+
+// Crear un caso .feature
+{
+  "ruta": "login/nuevo.feature",
+  "contenido": "Feature: Login\n  Scenario: ingresar\n    Given ..."
+}
+
+// Enviar evento al recorder
+{
+  "sessionId": "6f4f9f5e-72cf-4af3-8e55-09a4c9ae5e2a",
+  "action": "click",
+  "selector": "css=#login",
+  "text": "",
+  "value": ""
+}
+```
+
 ## Arquitectura
 - **Spring Boot** para APIs REST y configuración.
 - **Cucumber + Selenium** para pasos web reutilizables con esperas automáticas.

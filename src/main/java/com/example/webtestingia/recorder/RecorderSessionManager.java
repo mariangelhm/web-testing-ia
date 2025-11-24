@@ -29,6 +29,7 @@ public class RecorderSessionManager {
         RecorderSession session = new RecorderSession(sessionId, driver);
         sesiones.put(sessionId, session);
         LOGGER.info("Sesión de grabación {} creada", sessionId);
+        monitorLifecycle(sessionId, driver);
     }
 
     /**
@@ -65,5 +66,50 @@ public class RecorderSessionManager {
             LOGGER.error("Error al cerrar navegador de la sesión {}", sessionId, e);
         }
         return session.getSteps();
+    }
+
+    private void monitorLifecycle(String sessionId, WebDriver driver) {
+        Thread watcher = new Thread(() -> {
+            while (sesiones.containsKey(sessionId)) {
+                try {
+                    if (browserClosed(driver)) {
+                        LOGGER.info("Detectamos cierre de navegador para la sesión {}. Se liberará la sesión automáticamente.", sessionId);
+                        closeSessionSafely(sessionId);
+                        break;
+                    }
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    LOGGER.debug("Error al monitorear la sesión {}", sessionId, e);
+                }
+            }
+        }, "recorder-session-watch-" + sessionId);
+        watcher.setDaemon(true);
+        watcher.start();
+    }
+
+    private boolean browserClosed(WebDriver driver) {
+        try {
+            return driver == null || driver.getWindowHandles().isEmpty();
+        } catch (org.openqa.selenium.NoSuchSessionException e) {
+            return true;
+        } catch (Exception e) {
+            LOGGER.debug("No se pudo verificar el estado del navegador", e);
+            return false;
+        }
+    }
+
+    private void closeSessionSafely(String sessionId) {
+        RecorderSession session = sesiones.remove(sessionId);
+        if (session == null) {
+            return;
+        }
+        try {
+            session.getWebDriver().quit();
+        } catch (Exception e) {
+            LOGGER.warn("Error al cerrar navegador de la sesión {} durante limpieza automática", sessionId, e);
+        }
     }
 }
