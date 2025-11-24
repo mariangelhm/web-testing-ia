@@ -3,6 +3,8 @@ package com.example.webtestingia.drivers;
 import com.example.webtestingia.model.exception.BrowserException;
 import com.example.webtestingia.model.exception.InvalidConfigurationException;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -77,9 +79,9 @@ public class WebDriverFactory {
 
     private WebDriver crearLocal(String tipo) {
         return switch (tipo.toLowerCase()) {
-            case "firefox" -> maximized(new FirefoxDriver(firefoxOptions()));
-            case "edge" -> maximized(new EdgeDriver(edgeOptions()));
-            default -> maximized(new ChromeDriver(chromeOptions()));
+            case "firefox" -> visibleWindow(new FirefoxDriver(firefoxOptions()));
+            case "edge" -> visibleWindow(new EdgeDriver(edgeOptions()));
+            default -> visibleWindow(new ChromeDriver(chromeOptions()));
         };
     }
 
@@ -93,7 +95,6 @@ public class WebDriverFactory {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.addArguments("--disable-infobars");
-        options.addArguments("--start-maximized");
         options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
         options.setExperimentalOption("useAutomationExtension", false);
         return options;
@@ -103,7 +104,6 @@ public class WebDriverFactory {
         EdgeOptions options = new EdgeOptions();
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.addArguments("--disable-infobars");
-        options.addArguments("--start-maximized");
         options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
         options.setExperimentalOption("useAutomationExtension", false);
         return options;
@@ -118,11 +118,12 @@ public class WebDriverFactory {
         return options;
     }
 
-    private WebDriver maximized(WebDriver driver) {
+    private WebDriver visibleWindow(WebDriver driver) {
         try {
-            driver.manage().window().maximize();
+            driver.manage().window().setPosition(new Point(0, 0));
+            driver.manage().window().setSize(new Dimension(1280, 900));
         } catch (Exception e) {
-            LOGGER.warn("No se pudo maximizar la ventana del navegador", e);
+            LOGGER.warn("No se pudo ajustar la ventana del navegador", e);
         }
         return driver;
     }
