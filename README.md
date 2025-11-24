@@ -34,18 +34,18 @@ Backend de referencia para gestionar proyectos de automatización web sin base d
 // Crear o actualizar metadata de proyecto
 {
   "id": "demo-web",
-  "nombre": "Demo web",
-  "codigoJira": "WEB-10",
-  "tipo": "web",
-  "autor": "QA",
+  "name": "Demo web",
+  "jiraCode": "WEB-10",
+  "type": "web",
+  "author": "QA",
   "editor": "QA",
-  "casos": []
+  "cases": []
 }
 
 // Crear un caso .feature
 {
-  "ruta": "login/nuevo.feature",
-  "contenido": "Feature: Login\n  Scenario: ingresar\n    Given ..."
+  "path": "login/new.feature",
+  "content": "Feature: Login\n  Scenario: sign in\n    Given ..."
 }
 
 // Enviar evento al recorder
@@ -81,8 +81,8 @@ src/main/java/com/example/webtestingia/
 
 ## Detección de proyectos
 - Cada carpeta inmediata dentro de `src/test/resources/features` es un proyecto.
-- Cada proyecto posee un `project.json`. Si falta, `ProjectDiscoveryService` crea uno por defecto con campos mínimos (`id`, `nombre`, `codigoJira`, `tipo`, `autor`, `editor`, `casos`).
-- `ProyectoController` expone rutas en inglés:
+- Cada proyecto posee un `project.json`. Si falta, `ProjectDiscoveryService` crea uno por defecto con campos mínimos (`id`, `name`, `jiraCode`, `type`, `author`, `editor`, `cases`). Los alias en español siguen siendo aceptados al leer archivos existentes.
+- `ProyectoController` expone **únicamente** rutas en inglés (los paths en español como `GET /api/proyectos/{proyecto}/casos-web` ya no existen):
   - `GET /api/projects` para listar.
   - `GET /api/projects/{project}` para metadata y calidad promedio.
   - `PUT /api/projects/{project}` para actualizar `project.json` con validación básica.
@@ -99,8 +99,8 @@ src/main/java/com/example/webtestingia/
 - APIs en `CasoWebController` (paths en inglés):
   - `GET /api/projects/{project}/web-cases` → lista `TestCaseSummary` (ruta, tags, calidad) (`200`).
   - `GET /api/projects/{project}/web-cases/{ruta}` → `TestCaseDetail` con contenido y análisis (`200`); `404` si falta archivo; `422` si Gherkin es inválido.
-  - `POST /api/projects/{project}/web-cases` → body `{ "ruta": "funcionalidad/nuevo.feature", "contenido": "Feature: ..." }`; `201` creado, `400` ruta inválida, `422` parsing Gherkin.
-  - `PUT /api/projects/{project}/web-cases/{ruta}` → body `{ "contenido": "Feature: ..." }`; `200` al sobrescribir, `404` si no existe, `422` por parsing.
+  - `POST /api/projects/{project}/web-cases` → body `{ "path": "feature/new.feature", "content": "Feature: ..." }`; `201` creado, `400` ruta inválida, `422` parsing Gherkin.
+  - `PUT /api/projects/{project}/web-cases/{ruta}` → body `{ "content": "Feature: ..." }`; `200` al sobrescribir, `404` si no existe, `422` por parsing.
   - `DELETE /api/projects/{project}/web-cases/{ruta}` → `204` al borrar, `404` si no existe.
 
 ## Locators YAML
@@ -135,7 +135,20 @@ src/main/java/com/example/webtestingia/
   - **POST /api/recorder/start** → `201` con `{ "sessionId": "uuid" }`; `500` si el navegador no arranca.
   - **POST /api/recorder/event** → body `{ sessionId, action, selector, text, value }`; `202` al aceptar; `404` si la sesión no existe; `400` por evento inválido.
   - **GET /api/recorder/steps?sessionId=...** → `200` con lista de pasos generados.
-  - **GET /api/recorder/available-steps** → `200` con los steps disponibles en orden Given/When/Then para que el frontend los despliegue.
+  - **GET /api/recorder/available-steps** → `200` con los steps disponibles en orden Given/When/Then para que el frontend los despliegue. Ejemplo de respuesta:
+    ```json
+    {
+      "data": {
+        "steps": [
+          { "type": "GIVEN", "template": "Given navego a \"<url>\"" },
+          { "type": "WHEN", "template": "When hago clic en \"<target>\"" },
+          { "type": "WHEN", "template": "When escribo \"<text>\" en \"<target>\"" },
+          { "type": "WHEN", "template": "When ejecuto accion \"<action>\" sobre \"<target>\"" },
+          { "type": "THEN", "template": "Then debería ver el texto \"<text>\"" }
+        ]
+      }
+    }
+    ```
   - **POST /api/recorder/stop?sessionId=...** → `200` con pasos finales y resumen de calidad; `404` si la sesión no existe.
 
 ## Configuración de navegador
