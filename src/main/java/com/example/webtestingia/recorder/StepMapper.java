@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * Transforma eventos del navegador en pasos Gherkin, reutilizando la lógica de resolución de locators.
  */
@@ -28,12 +30,13 @@ public class StepMapper {
      * @param text     texto ingresado.
      * @return línea de step.
      */
-    public String mapEvent(String proyecto, String grupo, String action, String selector, String text) {
+    public String mapEvent(String proyecto, String grupo, String action, String selector, String text, String value) {
         String objetivo = resolverObjetivo(proyecto, grupo, selector);
         return switch (action) {
             case "click" -> "When hago clic en \"" + objetivo + "\"";
-            case "input", "change" -> "When escribo \"" + text + "\" en \"" + objetivo + "\"";
-            case "navigate" -> "Given navego a \"" + selector + "\"";
+            case "input", "change" -> "When escribo \"" + (value == null ? text : value) + "\" en \"" + objetivo + "\"";
+            case "navigate" -> "Given navego a \"" + (value == null || value.isBlank() ? selector : value) + "\"";
+            case "submit" -> "When envío el formulario \"" + objetivo + "\"";
             default -> "When ejecuto accion \"" + action + "\" sobre \"" + objetivo + "\"";
         };
     }
@@ -56,5 +59,19 @@ public class StepMapper {
             }
         }
         return normalizado;
+    }
+
+    /**
+     * Returns the available step templates ordered by Given, When and Then.
+     */
+    public List<StepTemplate> getAvailableSteps() {
+        return List.of(
+                new StepTemplate("GIVEN", "Given navego a \"<url>\""),
+                new StepTemplate("WHEN", "When hago clic en \"<target>\""),
+                new StepTemplate("WHEN", "When escribo \"<text>\" en \"<target>\""),
+                new StepTemplate("WHEN", "When envío el formulario \"<target>\""),
+                new StepTemplate("WHEN", "When ejecuto accion \"<action>\" sobre \"<target>\""),
+                new StepTemplate("THEN", "Then debería ver el texto \"<text>\"")
+        );
     }
 }
