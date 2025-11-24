@@ -1,78 +1,93 @@
 package com.example.webtestingia.controller;
 
-import com.example.webtestingia.drivers.WebDriverFactory;
-import com.example.webtestingia.model.exception.BrowserException;
+import com.example.webtestingia.model.ApiResponse;
 import com.example.webtestingia.recorder.RecorderService;
-import com.example.webtestingia.recorder.RecorderSessionManager;
-import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.webtestingia.recorder.StepMapper;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Controlador del grabador web multiusuario.
  */
+@CrossOrigin(
+        origins = {
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+        },
+        allowedHeaders = "*",
+        exposedHeaders = "*",
+        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
+        allowCredentials = "true"
+)
 @RestController
 @RequestMapping("/api/recorder")
 public class RecorderController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RecorderController.class);
-    private final RecorderSessionManager sessionManager;
     private final RecorderService recorderService;
-    private final WebDriverFactory webDriverFactory;
+    private final StepMapper stepMapper;
 
-    public RecorderController(RecorderSessionManager sessionManager, RecorderService recorderService, WebDriverFactory webDriverFactory) {
-        this.sessionManager = sessionManager;
+    public RecorderController(RecorderService recorderService, StepMapper stepMapper) {
         this.recorderService = recorderService;
-        this.webDriverFactory = webDriverFactory;
+        this.stepMapper = stepMapper;
     }
 
     /**
      * Inicia una sesión del grabador creando un navegador dedicado.
      */
     @PostMapping("/start")
-    public ResponseEntity<Map<String, String>> start() {
-        try {
-            WebDriver driver = webDriverFactory.buildDriver();
-            String sessionId = UUID.randomUUID().toString();
-            sessionManager.createSession(sessionId, driver);
-            return ResponseEntity.ok(Map.of("sessionId", sessionId));
-        } catch (Exception e) {
-            throw new BrowserException("No se pudo iniciar el navegador para la sesión", e);
-        }
+    public ResponseEntity<Map<String, Object>> start() {
+        return ApiResponse.ok(recorderService.startRecording());
     }
 
     /**
      * Registra un evento generado desde el frontend y lo mapea a pasos Gherkin.
      */
-    @PostMapping("/event")
-    public ResponseEntity<Map<String, String>> event(@RequestBody Map<String, Object> payload, @RequestParam(required = false) String proyecto, @RequestParam(required = false) String grupo) {
+    @PostMapping({"/event", "/event/", "/event/**"})
+    public ResponseEntity<Map<String, Object>> event(@RequestBody Map<String, Object> payload,
+                                                     @RequestParam(required = false) String proyecto,
+                                                     @RequestParam(required = false) String grupo) {
         recorderService.procesarEvento(proyecto, grupo, payload);
-        return ResponseEntity.ok(Map.of("mensaje", "Evento procesado"));
+        return ApiResponse.ok(Map.of("message", "Event processed"));
     }
 
     /**
      * Devuelve los pasos acumulados de una sesión.
      */
     @GetMapping("/steps")
-    public ResponseEntity<Map<String, Object>> steps(@RequestParam String sessionId) {
-        return ResponseEntity.ok(Map.of("steps", sessionManager.getSession(sessionId).getSteps()));
+    public ResponseEntity<Map<String, Object>> steps(@RequestParam String sessionId, @RequestParam String browserId) {
+        return ApiResponse.ok(recorderService.obtenerPasos(sessionId, browserId));
     }
 
     /**
      * Detiene la grabación, cierra el navegador y devuelve sugerencias.
      */
     @PostMapping("/stop")
-    public ResponseEntity<Map<String, Object>> stop(@RequestParam String sessionId) {
-        return ResponseEntity.ok(recorderService.finalizarSesion(sessionId));
+    public ResponseEntity<Map<String, Object>> stop(@RequestParam String sessionId, @RequestParam String browserId) {
+        return ApiResponse.ok(recorderService.finalizarSesion(sessionId, browserId));
+    }
+
+    /**
+     * Mantiene viva una sesión del recorder y valida que el navegador siga abierto.
+     */
+    @PostMapping("/ping")
+    public ResponseEntity<Map<String, Object>> ping(@RequestParam String sessionId, @RequestParam String browserId) {
+        return ApiResponse.ok(recorderService.ping(sessionId, browserId));
+    }
+
+    /**
+     * Provides the catalog of available steps ordered by Given/When/Then for UI consumers.
+     */
+    @GetMapping("/available-steps")
+    public ResponseEntity<Map<String, Object>> availableSteps() {
+        return ApiResponse.ok(Map.of("steps", stepMapper.getAvailableSteps()));
     }
 }

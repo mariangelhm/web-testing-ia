@@ -1,6 +1,8 @@
 package com.example.webtestingia.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +15,30 @@ import java.util.UUID;
 public class ProjectMetadata {
 
     private String id;
-    private String nombre;
-    private String codigoJira;
-    private String tipo;
-    private String autor;
+
+    @JsonProperty("name")
+    @JsonAlias("nombre")
+    private String name;
+
+    @JsonProperty("jiraCode")
+    @JsonAlias("codigoJira")
+    private String jiraCode;
+
+    @JsonProperty("type")
+    @JsonAlias("tipo")
+    private String type;
+
+    @JsonProperty("author")
+    @JsonAlias("autor")
+    private String author;
+
+    @JsonProperty("editor")
+    @JsonAlias("editor")
     private String editor;
-    private List<String> casos = new ArrayList<>();
+
+    @JsonProperty("cases")
+    @JsonAlias("casos")
+    private List<String> cases = new ArrayList<>();
 
     /**
      * Genera un metadato por defecto con valores básicos y un identificador único.
@@ -29,10 +49,10 @@ public class ProjectMetadata {
     public static ProjectMetadata defaultFor(String nombreProyecto) {
         ProjectMetadata metadata = new ProjectMetadata();
         metadata.setId(UUID.randomUUID().toString());
-        metadata.setNombre(nombreProyecto);
-        metadata.setCodigoJira(nombreProyecto.toUpperCase());
-        metadata.setTipo("WEB");
-        metadata.setAutor("Desconocido");
+        metadata.setName(nombreProyecto);
+        metadata.setJiraCode(nombreProyecto.toUpperCase());
+        metadata.setType("WEB");
+        metadata.setAuthor("Desconocido");
         metadata.setEditor("Desconocido");
         return metadata;
     }
@@ -45,36 +65,36 @@ public class ProjectMetadata {
         this.id = id;
     }
 
-    public String getNombre() {
-        return nombre;
+    public String getName() {
+        return name;
     }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getCodigoJira() {
-        return codigoJira;
+    public String getJiraCode() {
+        return jiraCode;
     }
 
-    public void setCodigoJira(String codigoJira) {
-        this.codigoJira = codigoJira;
+    public void setJiraCode(String jiraCode) {
+        this.jiraCode = jiraCode;
     }
 
-    public String getTipo() {
-        return tipo;
+    public String getType() {
+        return type;
     }
 
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public String getAutor() {
-        return autor;
+    public String getAuthor() {
+        return author;
     }
 
-    public void setAutor(String autor) {
-        this.autor = autor;
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     public String getEditor() {
@@ -85,11 +105,11 @@ public class ProjectMetadata {
         this.editor = editor;
     }
 
-    public List<String> getCasos() {
-        return casos;
+    public List<String> getCases() {
+        return cases;
     }
 
-    public void setCasos(List<String> casos) {
-        this.casos = casos;
+    public void setCases(List<String> cases) {
+        this.cases = cases;
     }
 }

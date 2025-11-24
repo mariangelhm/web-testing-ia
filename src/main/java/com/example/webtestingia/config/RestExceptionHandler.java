@@ -1,5 +1,6 @@
 package com.example.webtestingia.config;
 
+import com.example.webtestingia.model.ApiResponse;
 import com.example.webtestingia.model.exception.BrowserException;
 import com.example.webtestingia.model.exception.FileAccessException;
 import com.example.webtestingia.model.exception.InvalidConfigurationException;
@@ -15,7 +16,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Manejador global de excepciones para entregar respuestas claras y loguear errores.
@@ -38,7 +41,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler(FileAccessException.class)
     public ResponseEntity<Map<String, Object>> handleFile(FileAccessException ex) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex);
+        return buildResponse(HttpStatus.BAD_REQUEST, ex);
     }
 
     /**
@@ -78,11 +81,11 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("error", "Validación fallida");
-        body.put("detalle", ex.getBindingResult().getFieldErrors());
         LOGGER.error("Validación fallida", ex);
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        List<Map<String, String>> errores = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> Map.of("field", error.getField(), "message", error.getDefaultMessage()))
+                .collect(Collectors.toList());
+        return ApiResponse.notification(HttpStatus.BAD_REQUEST, "Validación fallida", errores, "ValidationError");
     }
 
     /**
@@ -90,14 +93,13 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex);
+        return buildResponse(HttpStatus.BAD_REQUEST, ex);
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, Exception ex) {
         LOGGER.error("Error: {}", ex.getMessage(), ex);
-        Map<String, Object> body = new HashMap<>();
-        body.put("mensaje", ex.getMessage());
-        body.put("tipo", ex.getClass().getSimpleName());
-        return new ResponseEntity<>(body, status);
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("exception", ex.getClass().getSimpleName());
+        return ApiResponse.notification(status, ex.getMessage(), detail, ex.getClass().getSimpleName());
     }
 }
