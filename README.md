@@ -48,8 +48,15 @@ Backend de referencia para gestionar proyectos de automatización web sin base d
   "content": "Feature: Login\n  Scenario: sign in\n    Given ..."
 }
 
-// Enviar evento al recorder
+// Iniciar el recorder y obtener IDs de sesión/navegador
 {
+  "sessionId": "6f4f9f5e-72cf-4af3-8e55-09a4c9ae5e2a",
+  "browserId": "4e9f2ad5-7e8b-4eaa-8e8d-1234567890ab"
+}
+
+// Evento enviado automáticamente por el script inyectado
+{
+  "browserId": "4e9f2ad5-7e8b-4eaa-8e8d-1234567890ab",
   "sessionId": "6f4f9f5e-72cf-4af3-8e55-09a4c9ae5e2a",
   "action": "click",
   "selector": "css=#login",
@@ -74,7 +81,7 @@ src/main/java/com/example/webtestingia/
     hooks/LoggingHooks.java
     model/ (ProjectMetadata, QualityRule, QualityResult, TestCaseDetail, TestCaseSummary, excepciones)
     quality/QualityAnalyzer.java
-    recorder/ (RecorderSessionManager, RecorderService, StepMapper)
+    recorder/ (RecorderSessionManager, RecorderService, RecorderScriptProvider, StepMapper, RecorderSession, RecorderEvent)
     service/ (ProjectDiscoveryService, CaseFileService, LocatorService)
     steps/ (WebGenericSteps, PreconditionSteps)
 ```
@@ -230,13 +237,14 @@ Respuesta exitosa:
   - **R5 - Uso consistente de Given/When/Then**: mantiene la narrativa Gherkin, facilita lectura para QA y negocio.
 
 ## Grabador multiusuario
-- `RecorderController` crea sesiones (`/api/recorder/start`), recibe eventos (`/api/recorder/event`), lista pasos (`/api/recorder/steps`), publica el catálogo de steps (`/api/recorder/available-steps`) y cierra sesiones (`/api/recorder/stop`).
-- `RecorderSessionManager` mantiene sesiones aisladas con su propio `WebDriver` y pasos acumulados.
-- `RecorderService` convierte eventos a steps mediante `StepMapper` y ejecuta `QualityAnalyzer` al finalizar para devolver sugerencias de mejora.
+- `RecorderController` crea sesiones (`/api/recorder/start`), inyecta el script de captura automáticamente en el navegador, recibe eventos (`/api/recorder/event`), lista pasos (`/api/recorder/steps`), expone ping (`/api/recorder/ping`), publica el catálogo de steps (`/api/recorder/available-steps`) y cierra sesiones (`/api/recorder/stop`).
+- `RecorderSessionManager` mantiene sesiones aisladas con su propio `WebDriver` y pasos/eventos acumulados, monitorea si el navegador se cerró y reinyecta el script tras cada navegación.
+- `RecorderService` convierte eventos a steps mediante `StepMapper` y ejecuta `QualityAnalyzer` al finalizar para devolver sugerencias de mejora y los selectores usados.
 - Contratos clave (paths en inglés):
-  - **POST /api/recorder/start** → `201` con `{ "sessionId": "uuid" }`; `500` si el navegador no arranca.
-  - **POST /api/recorder/event** → body `{ sessionId, action, selector, text, value }`; `202` al aceptar; `404` si la sesión no existe; `400` por evento inválido.
-  - **GET /api/recorder/steps?sessionId=...** → `200` con lista de pasos generados.
+  - **POST /api/recorder/start** → `200 OK` con `{ "sessionId": "uuid", "browserId": "uuid" }`. Abre el navegador visible, lo posiciona en pantalla y deja el script inyectado para capturar DOM events sin depender del frontend.
+  - **POST /api/recorder/event** → body `{ browserId, sessionId, action, selector, text, value }` que envía el script inyectado (escucha click, input, change, keydown, submit y navegación). `404` si la sesión o el navegador no coinciden.
+  - **GET /api/recorder/steps?sessionId=...&browserId=...** → `200` con lista de pasos Gherkin generados hasta el momento.
+  - **POST /api/recorder/ping?sessionId=...&browserId=...** → `200` si el navegador sigue abierto; `404` si la ventana ya se cerró.
   - **GET /api/recorder/available-steps** → `200` con los steps disponibles en orden Given/When/Then para que el frontend los despliegue. Ejemplo de respuesta:
     ```json
     {
@@ -245,13 +253,59 @@ Respuesta exitosa:
           { "type": "GIVEN", "template": "Given navego a \"<url>\"" },
           { "type": "WHEN", "template": "When hago clic en \"<target>\"" },
           { "type": "WHEN", "template": "When escribo \"<text>\" en \"<target>\"" },
+          { "type": "WHEN", "template": "When envío el formulario \"<target>\"" },
           { "type": "WHEN", "template": "When ejecuto accion \"<action>\" sobre \"<target>\"" },
           { "type": "THEN", "template": "Then debería ver el texto \"<text>\"" }
         ]
       }
     }
     ```
-  - **POST /api/recorder/stop?sessionId=...** → `200` con pasos finales y resumen de calidad; `404` si la sesión no existe.
+  - **POST /api/recorder/stop?sessionId=...&browserId=...** → `200` con pasos finales, calidad (score redondeado a 2 decimales), reglas cumplidas/fallidas, sugerencias y los selectores detectados; `404` si la sesión no existe o el navegador ya está cerrado.
+
+Ejemplo de respuesta de `/api/recorder/stop`:
+
+```json
+{
+  "data": {
+    "steps": [
+      "Given navego a \"https://app\"",
+      "When hago clic en \"css=#login\"",
+      "When escribo \"user@example.com\" en \"css=#username\""
+    ],
+    "quality": {
+      "score": 0.67,
+      "passedRules": [ { "id": "R2", "description": "..." } ],
+      "failedRules": [ { "id": "R1", "description": "..." } ],
+      "suggestions": ["R1 - Debe tener al menos un Then"],
+      "ruleDetails": { "R1": "..." }
+    },
+    "suggestions": ["R1 - Debe tener al menos un Then"],
+    "locators": {
+      "selectorsUsed": ["css=#login", "css=#username"]
+    }
+  }
+}
+```
+- El script de recorder se inyecta y reinicia automáticamente en cada navegación del navegador lanzado por `/api/recorder/start`,
+  por lo que la captura de eventos y el envío de `/api/recorder/event` no depende del frontend.
+
+## Catálogo de steps reutilizables
+- **GET /api/steps** → Lista todas las definiciones de steps encontradas en las clases `WebGenericSteps` y `ServiceSteps`, ordenadas primero los Given, luego los When y al final los Then.
+
+Ejemplo de respuesta:
+
+```json
+{
+  "data": {
+    "steps": [
+      { "type": "GIVEN", "pattern": "establezco el grupo \"{string}\"", "source": "WebGenericSteps" },
+      { "type": "WHEN", "pattern": "hago clic en \"{string}\"", "source": "WebGenericSteps" },
+      { "type": "WHEN", "pattern": "escribo \"{string}\" en \"{string}\"", "source": "WebGenericSteps" },
+      { "type": "THEN", "pattern": "debería ver el texto \"{string}\"", "source": "WebGenericSteps" }
+    ]
+  }
+}
+```
 
 ## Catálogo de steps reutilizables
 - **GET /api/steps** → Lista todas las definiciones de steps encontradas en las clases `WebGenericSteps` y `ServiceSteps`, ordenadas primero los Given, luego los When y al final los Then.

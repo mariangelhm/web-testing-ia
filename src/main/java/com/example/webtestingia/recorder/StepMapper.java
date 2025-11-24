@@ -30,12 +30,13 @@ public class StepMapper {
      * @param text     texto ingresado.
      * @return línea de step.
      */
-    public String mapEvent(String proyecto, String grupo, String action, String selector, String text) {
+    public String mapEvent(String proyecto, String grupo, String action, String selector, String text, String value) {
         String objetivo = resolverObjetivo(proyecto, grupo, selector);
         return switch (action) {
             case "click" -> "When hago clic en \"" + objetivo + "\"";
-            case "input", "change" -> "When escribo \"" + text + "\" en \"" + objetivo + "\"";
-            case "navigate" -> "Given navego a \"" + selector + "\"";
+            case "input", "change" -> "When escribo \"" + (value == null ? text : value) + "\" en \"" + objetivo + "\"";
+            case "navigate" -> "Given navego a \"" + (value == null || value.isBlank() ? selector : value) + "\"";
+            case "submit" -> "When envío el formulario \"" + objetivo + "\"";
             default -> "When ejecuto accion \"" + action + "\" sobre \"" + objetivo + "\"";
         };
     }
@@ -68,6 +69,7 @@ public class StepMapper {
                 new StepTemplate("GIVEN", "Given navego a \"<url>\""),
                 new StepTemplate("WHEN", "When hago clic en \"<target>\""),
                 new StepTemplate("WHEN", "When escribo \"<text>\" en \"<target>\""),
+                new StepTemplate("WHEN", "When envío el formulario \"<target>\""),
                 new StepTemplate("WHEN", "When ejecuto accion \"<action>\" sobre \"<target>\""),
                 new StepTemplate("THEN", "Then debería ver el texto \"<text>\"")
         );
