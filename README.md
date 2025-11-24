@@ -82,7 +82,7 @@ src/main/java/com/example/webtestingia/
 ## Detección de proyectos
 - Cada carpeta inmediata dentro de `src/test/resources/features` es un proyecto.
 - Cada proyecto posee un `project.json`. Si falta, `ProjectDiscoveryService` crea uno por defecto con campos mínimos (`id`, `name`, `jiraCode`, `type`, `author`, `editor`, `cases`). Los alias en español siguen siendo aceptados al leer archivos existentes.
-- `ProyectoController` expone **únicamente** rutas en inglés (los paths en español como `GET /api/proyectos/{proyecto}/casos-web` ya no existen):
+- `ProyectoController` expone **únicamente** rutas en inglés:
   - `GET /api/projects` para listar.
   - `GET /api/projects/{project}` para metadata y calidad promedio.
   - `PUT /api/projects/{project}` para actualizar `project.json` con validación básica.
@@ -91,6 +91,49 @@ src/main/java/com/example/webtestingia/
 - **GET /api/projects** → `200 OK` con lista de `ProjectMetadata`.
 - **GET /api/projects/{project}** → `200 OK` con `ProjectMetadata` + `calidadPromedio`; `404` si la carpeta no existe; `422` si `project.json` está corrupto.
 - **PUT /api/projects/{project}** → body JSON con los mismos campos de `project.json`; `200` al guardar, `400` si faltan campos obligatorios, `500` por error de escritura.
+
+Ejemplos:
+
+- **GET /api/projects/{project}**
+
+```json
+{
+  "data": {
+    "id": "demo-web",
+    "name": "Demo web",
+    "jiraCode": "WEB-10",
+    "type": "web",
+    "author": "QA",
+    "editor": "QA",
+    "cases": [],
+    "averageQuality": 0.87
+  }
+}
+```
+
+- **PUT /api/projects/{project}** request body
+
+```json
+{
+  "id": "demo-web",
+  "name": "Demo web",
+  "jiraCode": "WEB-10",
+  "type": "web",
+  "author": "QA",
+  "editor": "QA",
+  "cases": []
+}
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "data": {
+    "message": "Project saved"
+  }
+}
+```
 
 ## Casos de prueba (.feature)
 - Ubicados en `src/test/resources/features/<proyecto>/<funcionalidad>/*.feature`.
@@ -102,6 +145,65 @@ src/main/java/com/example/webtestingia/
   - `POST /api/projects/{project}/web-cases` → body `{ "path": "feature/new.feature", "content": "Feature: ..." }`; `201` creado, `400` ruta inválida, `422` parsing Gherkin.
   - `PUT /api/projects/{project}/web-cases/{ruta}` → body `{ "content": "Feature: ..." }`; `200` al sobrescribir, `404` si no existe, `422` por parsing.
   - `DELETE /api/projects/{project}/web-cases/{ruta}` → `204` al borrar, `404` si no existe.
+
+Ejemplos de entrada/salida:
+
+- **GET /api/projects/{project}/web-cases**
+
+```json
+{
+  "data": [
+    {
+      "ruta": "login/login.feature",
+      "escenario": "Scenario: successful login",
+      "tags": ["@smoke"],
+      "calidad": {
+        "score": 0.9,
+        "passedRules": ["R2"],
+        "failedRules": ["R1"],
+        "details": []
+      }
+    }
+  ]
+}
+```
+
+- **POST /api/projects/{project}/web-cases** request body
+
+```json
+{
+  "path": "feature/new.feature",
+  "content": "Feature: ..."
+}
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "data": {
+    "message": "Case created"
+  }
+}
+```
+
+- **GET /api/projects/{project}/web-cases/{ruta}** respuesta
+
+```json
+{
+  "data": {
+    "ruta": "login/login.feature",
+    "contenido": "Feature: ...",
+    "escenarios": ["Scenario: successful login"],
+    "calidad": {
+      "score": 0.9,
+      "passedRules": ["R2"],
+      "failedRules": ["R1"],
+      "details": []
+    }
+  }
+}
+```
 
 ## Locators YAML
 - Se cargan desde `src/main/resources/locators/<proyecto>/*.yml`.
@@ -150,6 +252,24 @@ src/main/java/com/example/webtestingia/
     }
     ```
   - **POST /api/recorder/stop?sessionId=...** → `200` con pasos finales y resumen de calidad; `404` si la sesión no existe.
+
+## Catálogo de steps reutilizables
+- **GET /api/steps** → Lista todas las definiciones de steps encontradas en las clases `WebGenericSteps` y `ServiceSteps`, ordenadas primero los Given, luego los When y al final los Then.
+
+Ejemplo de respuesta:
+
+```json
+{
+  "data": {
+    "steps": [
+      { "type": "GIVEN", "pattern": "establezco el grupo \"{string}\"", "source": "WebGenericSteps" },
+      { "type": "WHEN", "pattern": "hago clic en \"{string}\"", "source": "WebGenericSteps" },
+      { "type": "WHEN", "pattern": "escribo \"{string}\" en \"{string}\"", "source": "WebGenericSteps" },
+      { "type": "THEN", "pattern": "debería ver el texto \"{string}\"", "source": "WebGenericSteps" }
+    ]
+  }
+}
+```
 
 ## Configuración de navegador
 - Archivo `src/main/resources/config/navegador.yml` permite `tipo` (chrome/firefox/edge), `modo` (local/grid), auto-descarga y URL de grid.
