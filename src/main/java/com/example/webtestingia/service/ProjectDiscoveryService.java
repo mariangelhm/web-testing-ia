@@ -80,7 +80,7 @@ public class ProjectDiscoveryService {
                 .map(TestCaseSummary::getCalidad)
                 .filter(java.util.Objects::nonNull)
                 .toList();
-        double promedio = calidades.isEmpty() ? 0.0 : calidades.stream().mapToDouble(QualityResult::getPuntaje).average().orElse(0.0);
+        double promedio = calidades.isEmpty() ? 0.0 : calidades.stream().mapToDouble(QualityResult::getScore).average().orElse(0.0);
         metadata.setCasos(casos.stream().map(TestCaseSummary::getRuta).collect(Collectors.toList()));
         LOGGER.info("Proyecto {} cargado con {} casos y calidad promedio {}", proyecto, casos.size(), promedio);
         return metadata;

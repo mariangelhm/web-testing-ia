@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * Transforma eventos del navegador en pasos Gherkin, reutilizando la lógica de resolución de locators.
  */
@@ -56,5 +58,18 @@ public class StepMapper {
             }
         }
         return normalizado;
+    }
+
+    /**
+     * Returns the available step templates ordered by Given, When and Then.
+     */
+    public List<StepTemplate> getAvailableSteps() {
+        return List.of(
+                new StepTemplate("GIVEN", "Given navego a \"<url>\""),
+                new StepTemplate("WHEN", "When hago clic en \"<target>\""),
+                new StepTemplate("WHEN", "When escribo \"<text>\" en \"<target>\""),
+                new StepTemplate("WHEN", "When ejecuto accion \"<action>\" sobre \"<target>\""),
+                new StepTemplate("THEN", "Then debería ver el texto \"<text>\"")
+        );
     }
 }

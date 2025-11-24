@@ -5,6 +5,7 @@ import com.example.webtestingia.model.ApiResponse;
 import com.example.webtestingia.model.exception.BrowserException;
 import com.example.webtestingia.recorder.RecorderService;
 import com.example.webtestingia.recorder.RecorderSessionManager;
+import com.example.webtestingia.recorder.StepMapper;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +43,13 @@ public class RecorderController {
     private final RecorderSessionManager sessionManager;
     private final RecorderService recorderService;
     private final WebDriverFactory webDriverFactory;
+    private final StepMapper stepMapper;
 
-    public RecorderController(RecorderSessionManager sessionManager, RecorderService recorderService, WebDriverFactory webDriverFactory) {
+    public RecorderController(RecorderSessionManager sessionManager, RecorderService recorderService, WebDriverFactory webDriverFactory, StepMapper stepMapper) {
         this.sessionManager = sessionManager;
         this.recorderService = recorderService;
         this.webDriverFactory = webDriverFactory;
+        this.stepMapper = stepMapper;
     }
 
     /**
@@ -70,7 +73,7 @@ public class RecorderController {
     @PostMapping({"/event", "/event/", "/event/**"})
     public ResponseEntity<Map<String, Object>> event(@RequestBody Map<String, Object> payload, @RequestParam(required = false) String proyecto, @RequestParam(required = false) String grupo) {
         recorderService.procesarEvento(proyecto, grupo, payload);
-        return ApiResponse.ok(Map.of("mensaje", "Evento procesado"));
+        return ApiResponse.ok(Map.of("message", "Event processed"));
     }
 
     /**
@@ -87,5 +90,13 @@ public class RecorderController {
     @PostMapping("/stop")
     public ResponseEntity<Map<String, Object>> stop(@RequestParam String sessionId) {
         return ApiResponse.ok(recorderService.finalizarSesion(sessionId));
+    }
+
+    /**
+     * Provides the catalog of available steps ordered by Given/When/Then for UI consumers.
+     */
+    @GetMapping("/available-steps")
+    public ResponseEntity<Map<String, Object>> availableSteps() {
+        return ApiResponse.ok(Map.of("steps", stepMapper.getAvailableSteps()));
     }
 }
