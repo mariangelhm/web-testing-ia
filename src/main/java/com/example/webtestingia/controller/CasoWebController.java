@@ -1,5 +1,6 @@
 package com.example.webtestingia.controller;
 
+import com.example.webtestingia.model.ApiResponse;
 import com.example.webtestingia.model.TestCaseDetail;
 import com.example.webtestingia.model.TestCaseSummary;
 import com.example.webtestingia.service.CaseFileService;
@@ -22,7 +23,7 @@ import java.util.Map;
  * Controlador para operaciones sobre casos de prueba web almacenados en archivos .feature.
  */
 @RestController
-@RequestMapping("/api/proyectos/{proyecto}/casos-web")
+@RequestMapping("/api/projects/{project}/web-cases")
 public class CasoWebController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CasoWebController.class);
@@ -41,50 +42,50 @@ public class CasoWebController {
      * Lista los casos de un proyecto.
      */
     @GetMapping
-    public ResponseEntity<List<TestCaseSummary>> listar(@PathVariable String proyecto) {
-        LOGGER.info("Listando casos para {}", proyecto);
-        return ResponseEntity.ok(caseFileService.listarCasos(proyecto));
+    public ResponseEntity<Map<String, Object>> listar(@PathVariable("project") String proyecto) {
+        LOGGER.info("Listing cases for {}", proyecto);
+        return ApiResponse.ok(caseFileService.listarCasos(proyecto));
     }
 
     /**
      * Devuelve el contenido y análisis de un caso.
      */
     @GetMapping("/{ruta:.+}")
-    public ResponseEntity<TestCaseDetail> obtener(@PathVariable String proyecto, @PathVariable String ruta) {
-        LOGGER.info("Leyendo caso {} en {}", ruta, proyecto);
-        return ResponseEntity.ok(caseFileService.leerCaso(proyecto, ruta));
+    public ResponseEntity<Map<String, Object>> obtener(@PathVariable("project") String proyecto, @PathVariable String ruta) {
+        LOGGER.info("Reading case {} in {}", ruta, proyecto);
+        return ApiResponse.ok(caseFileService.leerCaso(proyecto, ruta));
     }
 
     /**
      * Crea un nuevo caso .feature.
      */
     @PostMapping
-    public ResponseEntity<Map<String, String>> crear(@PathVariable String proyecto, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<Map<String, Object>> crear(@PathVariable("project") String proyecto, @RequestBody Map<String, String> payload) {
         String ruta = payload.get("ruta");
         String contenido = payload.get("contenido");
-        LOGGER.info("Creando caso {} en {}", ruta, proyecto);
+        LOGGER.info("Creating case {} in {}", ruta, proyecto);
         caseFileService.crearCaso(proyecto, ruta, contenido);
-        return ResponseEntity.ok(Map.of("mensaje", "Caso creado"));
+        return ApiResponse.ok(Map.of("message", "Case created"));
     }
 
     /**
      * Actualiza un caso existente.
      */
     @PutMapping("/{ruta:.+}")
-    public ResponseEntity<Map<String, String>> actualizar(@PathVariable String proyecto, @PathVariable String ruta, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable("project") String proyecto, @PathVariable String ruta, @RequestBody Map<String, String> payload) {
         String contenido = payload.get("contenido");
-        LOGGER.info("Actualizando caso {} en {}", ruta, proyecto);
+        LOGGER.info("Updating case {} in {}", ruta, proyecto);
         caseFileService.actualizarCaso(proyecto, ruta, contenido);
-        return ResponseEntity.ok(Map.of("mensaje", "Caso actualizado"));
+        return ApiResponse.ok(Map.of("message", "Case updated"));
     }
 
     /**
      * Elimina un caso de prueba.
      */
     @DeleteMapping("/{ruta:.+}")
-    public ResponseEntity<Map<String, String>> eliminar(@PathVariable String proyecto, @PathVariable String ruta) {
-        LOGGER.warn("Eliminando caso {} en {}", ruta, proyecto);
+    public ResponseEntity<Map<String, Object>> eliminar(@PathVariable("project") String proyecto, @PathVariable String ruta) {
+        LOGGER.warn("Deleting case {} in {}", ruta, proyecto);
         caseFileService.eliminarCaso(proyecto, ruta);
-        return ResponseEntity.ok(Map.of("mensaje", "Caso eliminado"));
+        return ApiResponse.ok(Map.of("message", "Case deleted"));
     }
 }

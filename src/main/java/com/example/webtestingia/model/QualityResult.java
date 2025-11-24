@@ -10,49 +10,49 @@ import java.util.Map;
  */
 public class QualityResult {
 
-    private double puntaje;
-    private List<String> reglasCumplidas = new ArrayList<>();
-    private List<String> reglasFalladas = new ArrayList<>();
-    private List<String> sugerencias = new ArrayList<>();
-    private Map<String, String> detalleReglas = new HashMap<>();
+    private double score;
+    private List<QualityRuleOutcome> passedRules = new ArrayList<>();
+    private List<QualityRuleOutcome> failedRules = new ArrayList<>();
+    private List<String> suggestions = new ArrayList<>();
+    private Map<String, String> ruleDetails = new HashMap<>();
 
-    public double getPuntaje() {
-        return puntaje;
+    public double getScore() {
+        return score;
     }
 
-    public void setPuntaje(double puntaje) {
-        this.puntaje = puntaje;
+    public void setScore(double score) {
+        this.score = score;
     }
 
-    public List<String> getReglasCumplidas() {
-        return reglasCumplidas;
+    public List<QualityRuleOutcome> getPassedRules() {
+        return passedRules;
     }
 
-    public void setReglasCumplidas(List<String> reglasCumplidas) {
-        this.reglasCumplidas = reglasCumplidas;
+    public void setPassedRules(List<QualityRuleOutcome> passedRules) {
+        this.passedRules = passedRules;
     }
 
-    public List<String> getReglasFalladas() {
-        return reglasFalladas;
+    public List<QualityRuleOutcome> getFailedRules() {
+        return failedRules;
     }
 
-    public void setReglasFalladas(List<String> reglasFalladas) {
-        this.reglasFalladas = reglasFalladas;
+    public void setFailedRules(List<QualityRuleOutcome> failedRules) {
+        this.failedRules = failedRules;
     }
 
-    public List<String> getSugerencias() {
-        return sugerencias;
+    public List<String> getSuggestions() {
+        return suggestions;
     }
 
-    public void setSugerencias(List<String> sugerencias) {
-        this.sugerencias = sugerencias;
+    public void setSuggestions(List<String> suggestions) {
+        this.suggestions = suggestions;
     }
 
-    public Map<String, String> getDetalleReglas() {
-        return detalleReglas;
+    public Map<String, String> getRuleDetails() {
+        return ruleDetails;
     }
 
-    public void setDetalleReglas(Map<String, String> detalleReglas) {
-        this.detalleReglas = detalleReglas;
+    public void setRuleDetails(Map<String, String> ruleDetails) {
+        this.ruleDetails = ruleDetails;
     }
 }

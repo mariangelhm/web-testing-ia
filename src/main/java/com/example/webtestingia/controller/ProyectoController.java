@@ -1,5 +1,6 @@
 package com.example.webtestingia.controller;
 
+import com.example.webtestingia.model.ApiResponse;
 import com.example.webtestingia.model.ProjectMetadata;
 import com.example.webtestingia.service.ProjectDiscoveryService;
 import org.slf4j.Logger;
@@ -13,12 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controlador REST para exponer operaciones sobre proyectos detectados en el sistema de archivos.
  */
 @RestController
-@RequestMapping("/api/proyectos")
+@RequestMapping("/api/projects")
 public class ProyectoController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProyectoController.class);
@@ -39,9 +41,9 @@ public class ProyectoController {
      * @return lista de metadatos.
      */
     @GetMapping
-    public ResponseEntity<List<ProjectMetadata>> listar() {
-        LOGGER.info("Listando proyectos");
-        return ResponseEntity.ok(discoveryService.listarProyectos());
+    public ResponseEntity<Map<String, Object>> listar() {
+        LOGGER.info("Listing projects");
+        return ApiResponse.ok(discoveryService.listarProyectos());
     }
 
     /**
@@ -50,10 +52,10 @@ public class ProyectoController {
      * @param proyecto nombre del proyecto.
      * @return metadata completa.
      */
-    @GetMapping("/{proyecto}")
-    public ResponseEntity<ProjectMetadata> obtener(@PathVariable String proyecto) {
-        LOGGER.info("Cargando proyecto {}", proyecto);
-        return ResponseEntity.ok(discoveryService.obtenerProyecto(proyecto));
+    @GetMapping("/{project}")
+    public ResponseEntity<Map<String, Object>> obtener(@PathVariable("project") String proyecto) {
+        LOGGER.info("Loading project {}", proyecto);
+        return ApiResponse.ok(discoveryService.obtenerProyecto(proyecto));
     }
 
     /**
@@ -63,9 +65,9 @@ public class ProyectoController {
      * @param metadata nuevo contenido.
      * @return metadata persistida.
      */
-    @PutMapping("/{proyecto}")
-    public ResponseEntity<ProjectMetadata> actualizar(@PathVariable String proyecto, @RequestBody ProjectMetadata metadata) {
-        LOGGER.info("Actualizando project.json de {}", proyecto);
-        return ResponseEntity.ok(discoveryService.actualizarProyecto(proyecto, metadata));
+    @PutMapping("/{project}")
+    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable("project") String proyecto, @RequestBody ProjectMetadata metadata) {
+        LOGGER.info("Updating project.json for {}", proyecto);
+        return ApiResponse.ok(discoveryService.actualizarProyecto(proyecto, metadata));
     }
 }
