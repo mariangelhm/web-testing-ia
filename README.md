@@ -82,33 +82,33 @@ src/main/java/com/example/webtestingia/
 ## Detección de proyectos
 - Cada carpeta inmediata dentro de `src/test/resources/features` es un proyecto.
 - Cada proyecto posee un `project.json`. Si falta, `ProjectDiscoveryService` crea uno por defecto con campos mínimos (`id`, `nombre`, `codigoJira`, `tipo`, `autor`, `editor`, `casos`).
-- `ProyectoController` expone:
-  - `GET /api/proyectos` para listar.
-  - `GET /api/proyectos/{proyecto}` para metadata y calidad promedio.
-  - `PUT /api/proyectos/{proyecto}` para actualizar `project.json` con validación básica.
+- `ProyectoController` expone rutas en inglés:
+  - `GET /api/projects` para listar.
+  - `GET /api/projects/{project}` para metadata y calidad promedio.
+  - `PUT /api/projects/{project}` para actualizar `project.json` con validación básica.
 
 ### Contratos de endpoints de proyectos
-- **GET /api/proyectos** → `200 OK` con lista de `ProjectMetadata`.
-- **GET /api/proyectos/{proyecto}** → `200 OK` con `ProjectMetadata` + `calidadPromedio`; `404` si la carpeta no existe; `422` si `project.json` está corrupto.
-- **PUT /api/proyectos/{proyecto}** → body JSON con los mismos campos de `project.json`; `200` al guardar, `400` si faltan campos obligatorios, `500` por error de escritura.
+- **GET /api/projects** → `200 OK` con lista de `ProjectMetadata`.
+- **GET /api/projects/{project}** → `200 OK` con `ProjectMetadata` + `calidadPromedio`; `404` si la carpeta no existe; `422` si `project.json` está corrupto.
+- **PUT /api/projects/{project}** → body JSON con los mismos campos de `project.json`; `200` al guardar, `400` si faltan campos obligatorios, `500` por error de escritura.
 
 ## Casos de prueba (.feature)
 - Ubicados en `src/test/resources/features/<proyecto>/<funcionalidad>/*.feature`.
 - `CaseFileService` permite listar, leer, crear, actualizar y eliminar archivos, extrayendo escenarios y tags mediante expresiones regulares.
 - Calidad por caso calculada con `QualityAnalyzer`.
-- APIs en `CasoWebController`:
-  - `GET /api/proyectos/{proyecto}/casos-web` → lista `TestCaseSummary` (ruta, tags, calidad) (`200`).
-  - `GET /api/proyectos/{proyecto}/casos-web/{ruta}` → `TestCaseDetail` con contenido y análisis (`200`); `404` si falta archivo; `422` si Gherkin es inválido.
-  - `POST /api/proyectos/{proyecto}/casos-web` → body `{ "ruta": "funcionalidad/nuevo.feature", "contenido": "Feature: ..." }`; `201` creado, `400` ruta inválida, `422` parsing Gherkin.
-  - `PUT /api/proyectos/{proyecto}/casos-web/{ruta}` → body `{ "contenido": "Feature: ..." }`; `200` al sobrescribir, `404` si no existe, `422` por parsing.
-  - `DELETE /api/proyectos/{proyecto}/casos-web/{ruta}` → `204` al borrar, `404` si no existe.
+- APIs en `CasoWebController` (paths en inglés):
+  - `GET /api/projects/{project}/web-cases` → lista `TestCaseSummary` (ruta, tags, calidad) (`200`).
+  - `GET /api/projects/{project}/web-cases/{ruta}` → `TestCaseDetail` con contenido y análisis (`200`); `404` si falta archivo; `422` si Gherkin es inválido.
+  - `POST /api/projects/{project}/web-cases` → body `{ "ruta": "funcionalidad/nuevo.feature", "contenido": "Feature: ..." }`; `201` creado, `400` ruta inválida, `422` parsing Gherkin.
+  - `PUT /api/projects/{project}/web-cases/{ruta}` → body `{ "contenido": "Feature: ..." }`; `200` al sobrescribir, `404` si no existe, `422` por parsing.
+  - `DELETE /api/projects/{project}/web-cases/{ruta}` → `204` al borrar, `404` si no existe.
 
 ## Locators YAML
 - Se cargan desde `src/main/resources/locators/<proyecto>/*.yml`.
 - `LocatorService` cachea los YAML, valida grupos y locators, y permite resolver selectores.
-- APIs:
-  - `GET /api/proyectos/{proyecto}/locators` → mapa completo de grupos (`200`); `404` si falta proyecto o YAML.
-  - `GET /api/proyectos/{proyecto}/locators/{grupo}` → mapa de locators del grupo (`200`); `404` si el grupo no existe; `422` si el YAML está corrupto.
+- APIs (paths en inglés):
+  - `GET /api/projects/{project}/locators` → mapa completo de grupos (`200`); `404` si falta proyecto o YAML.
+  - `GET /api/projects/{project}/locators/{group}` → mapa de locators del grupo (`200`); `404` si el grupo no existe; `422` si el YAML está corrupto.
 
 ## Steps genéricos
 - `WebGenericSteps` soporta dos formas de selección:
@@ -128,13 +128,14 @@ src/main/java/com/example/webtestingia/
   - **R5 - Uso consistente de Given/When/Then**: mantiene la narrativa Gherkin, facilita lectura para QA y negocio.
 
 ## Grabador multiusuario
-- `RecorderController` crea sesiones (`/api/recorder/start`), recibe eventos (`/api/recorder/event`), lista pasos (`/api/recorder/steps`) y cierra sesiones (`/api/recorder/stop`).
+- `RecorderController` crea sesiones (`/api/recorder/start`), recibe eventos (`/api/recorder/event`), lista pasos (`/api/recorder/steps`), publica el catálogo de steps (`/api/recorder/available-steps`) y cierra sesiones (`/api/recorder/stop`).
 - `RecorderSessionManager` mantiene sesiones aisladas con su propio `WebDriver` y pasos acumulados.
 - `RecorderService` convierte eventos a steps mediante `StepMapper` y ejecuta `QualityAnalyzer` al finalizar para devolver sugerencias de mejora.
-- Contratos clave:
+- Contratos clave (paths en inglés):
   - **POST /api/recorder/start** → `201` con `{ "sessionId": "uuid" }`; `500` si el navegador no arranca.
   - **POST /api/recorder/event** → body `{ sessionId, action, selector, text, value }`; `202` al aceptar; `404` si la sesión no existe; `400` por evento inválido.
   - **GET /api/recorder/steps?sessionId=...** → `200` con lista de pasos generados.
+  - **GET /api/recorder/available-steps** → `200` con los steps disponibles en orden Given/When/Then para que el frontend los despliegue.
   - **POST /api/recorder/stop?sessionId=...** → `200` con pasos finales y resumen de calidad; `404` si la sesión no existe.
 
 ## Configuración de navegador

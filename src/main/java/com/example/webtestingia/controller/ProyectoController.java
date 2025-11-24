@@ -20,7 +20,7 @@ import java.util.Map;
  * Controlador REST para exponer operaciones sobre proyectos detectados en el sistema de archivos.
  */
 @RestController
-@RequestMapping("/api/proyectos")
+@RequestMapping("/api/projects")
 public class ProyectoController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProyectoController.class);
@@ -42,7 +42,7 @@ public class ProyectoController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> listar() {
-        LOGGER.info("Listando proyectos");
+        LOGGER.info("Listing projects");
         return ApiResponse.ok(discoveryService.listarProyectos());
     }
 
@@ -52,9 +52,9 @@ public class ProyectoController {
      * @param proyecto nombre del proyecto.
      * @return metadata completa.
      */
-    @GetMapping("/{proyecto}")
-    public ResponseEntity<Map<String, Object>> obtener(@PathVariable String proyecto) {
-        LOGGER.info("Cargando proyecto {}", proyecto);
+    @GetMapping("/{project}")
+    public ResponseEntity<Map<String, Object>> obtener(@PathVariable("project") String proyecto) {
+        LOGGER.info("Loading project {}", proyecto);
         return ApiResponse.ok(discoveryService.obtenerProyecto(proyecto));
     }
 
@@ -65,9 +65,9 @@ public class ProyectoController {
      * @param metadata nuevo contenido.
      * @return metadata persistida.
      */
-    @PutMapping("/{proyecto}")
-    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable String proyecto, @RequestBody ProjectMetadata metadata) {
-        LOGGER.info("Actualizando project.json de {}", proyecto);
+    @PutMapping("/{project}")
+    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable("project") String proyecto, @RequestBody ProjectMetadata metadata) {
+        LOGGER.info("Updating project.json for {}", proyecto);
         return ApiResponse.ok(discoveryService.actualizarProyecto(proyecto, metadata));
     }
 }

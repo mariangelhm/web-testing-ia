@@ -16,7 +16,7 @@ import java.util.Map;
  * Controlador para exponer los locators YAML cargados por proyecto.
  */
 @RestController
-@RequestMapping("/api/proyectos/{proyecto}/locators")
+@RequestMapping("/api/projects/{project}/locators")
 public class LocatorController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocatorController.class);
@@ -33,8 +33,8 @@ public class LocatorController {
      * Lista todos los locators de un proyecto.
      */
     @GetMapping
-    public ResponseEntity<Map<String, Object>> listar(@PathVariable String proyecto) {
-        LOGGER.info("Listando locators de {}", proyecto);
+    public ResponseEntity<Map<String, Object>> listar(@PathVariable("project") String proyecto) {
+        LOGGER.info("Listing locators for {}", proyecto);
         return ApiResponse.ok(locatorService.obtenerLocators(proyecto));
     }
 
@@ -42,8 +42,8 @@ public class LocatorController {
      * Devuelve un grupo específico de locators.
      */
     @GetMapping("/{grupo}")
-    public ResponseEntity<Map<String, Object>> grupo(@PathVariable String proyecto, @PathVariable String grupo) {
-        LOGGER.info("Obteniendo grupo {} de {}", grupo, proyecto);
+    public ResponseEntity<Map<String, Object>> grupo(@PathVariable("project") String proyecto, @PathVariable String grupo) {
+        LOGGER.info("Fetching group {} of {}", grupo, proyecto);
         return ApiResponse.ok(locatorService.obtenerGrupo(proyecto, grupo));
     }
 }
