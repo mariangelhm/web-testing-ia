@@ -307,24 +307,6 @@ Ejemplo de respuesta:
 }
 ```
 
-## Catálogo de steps reutilizables
-- **GET /api/steps** → Lista todas las definiciones de steps encontradas en las clases `WebGenericSteps` y `ServiceSteps`, ordenadas primero los Given, luego los When y al final los Then.
-
-Ejemplo de respuesta:
-
-```json
-{
-  "data": {
-    "steps": [
-      { "type": "GIVEN", "pattern": "establezco el grupo \"{string}\"", "source": "WebGenericSteps" },
-      { "type": "WHEN", "pattern": "hago clic en \"{string}\"", "source": "WebGenericSteps" },
-      { "type": "WHEN", "pattern": "escribo \"{string}\" en \"{string}\"", "source": "WebGenericSteps" },
-      { "type": "THEN", "pattern": "debería ver el texto \"{string}\"", "source": "WebGenericSteps" }
-    ]
-  }
-}
-```
-
 ## Configuración de navegador
 - Archivo `src/main/resources/config/navegador.yml` permite `tipo` (chrome/firefox/edge), `modo` (local/grid), auto-descarga y URL de grid.
 - `WebDriverFactory` aplica la configuración, usa WebDriverManager y soporta `RemoteWebDriver` para grid.

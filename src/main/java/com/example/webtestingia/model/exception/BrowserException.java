@@ -6,6 +6,15 @@ package com.example.webtestingia.model.exception;
 public class BrowserException extends RuntimeException {
 
     /**
+     * Constructor únicamente con mensaje descriptivo.
+     *
+     * @param message mensaje descriptivo.
+     */
+    public BrowserException(String message) {
+        super(message);
+    }
+
+    /**
      * Constructor con detalle y causa.
      *
      * @param message mensaje descriptivo.

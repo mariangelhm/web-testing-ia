@@ -114,29 +114,6 @@ public class RecorderSessionManager {
         watcher.start();
     }
 
-
-    private void monitorLifecycle(String sessionId, WebDriver driver) {
-        Thread watcher = new Thread(() -> {
-            while (sesiones.containsKey(sessionId)) {
-                try {
-                    if (browserClosed(driver)) {
-                        LOGGER.info("Detectamos cierre de navegador para la sesión {}. Se liberará la sesión automáticamente.", sessionId);
-                        closeSessionSafely(sessionId);
-                        break;
-                    }
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                } catch (Exception e) {
-                    LOGGER.debug("Error al monitorear la sesión {}", sessionId, e);
-                }
-            }
-        }, "recorder-session-watch-" + sessionId);
-        watcher.setDaemon(true);
-        watcher.start();
-    }
-
     private boolean browserClosed(WebDriver driver) {
         try {
             return driver == null || driver.getWindowHandles().isEmpty();
