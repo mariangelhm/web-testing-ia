@@ -2,6 +2,7 @@ package com.example.webtestingia.quality;
 
 import com.example.webtestingia.model.QualityResult;
 import com.example.webtestingia.model.QualityRule;
+import com.example.webtestingia.model.QualityRuleOutcome;
 import com.example.webtestingia.model.exception.InvalidConfigurationException;
 import com.example.webtestingia.model.exception.ParsingException;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +49,10 @@ public class QualityAnalyzer {
             cargarReglas();
         }
         QualityResult result = new QualityResult();
-        List<String> cumplidas = new ArrayList<>();
-        List<String> falladas = new ArrayList<>();
+        List<QualityRuleOutcome> cumplidas = new ArrayList<>();
+        List<QualityRuleOutcome> falladas = new ArrayList<>();
         List<String> sugerencias = new ArrayList<>();
+        Map<String, String> detalleReglas = new HashMap<>();
         double pesoTotal = reglasActivas.stream().mapToDouble(QualityRule::getPeso).sum();
         double acumulado = 0.0;
 
@@ -58,18 +61,19 @@ public class QualityAnalyzer {
             String motivo = construirMotivo(regla);
             if (cumple) {
                 acumulado += regla.getPeso();
-                cumplidas.add(regla.getId());
-                result.getDetalleReglas().put(regla.getId(), motivo);
+                cumplidas.add(new QualityRuleOutcome(regla.getId(), motivo));
+                detalleReglas.put(regla.getId(), motivo);
             } else {
-                falladas.add(regla.getId());
+                falladas.add(new QualityRuleOutcome(regla.getId(), motivo));
                 sugerencias.add(motivo);
-                result.getDetalleReglas().put(regla.getId(), motivo);
+                detalleReglas.put(regla.getId(), motivo);
             }
         }
-        result.setPuntaje(pesoTotal == 0 ? 0 : acumulado / pesoTotal);
-        result.setReglasCumplidas(cumplidas);
-        result.setReglasFalladas(falladas);
-        result.setSugerencias(sugerencias);
+        result.setScore(pesoTotal == 0 ? 0 : acumulado / pesoTotal);
+        result.setPassedRules(cumplidas);
+        result.setFailedRules(falladas);
+        result.setSuggestions(sugerencias);
+        result.setRuleDetails(detalleReglas);
         return result;
     }
 
