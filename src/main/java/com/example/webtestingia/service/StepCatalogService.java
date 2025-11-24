@@ -17,13 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Aggregates step definitions declared in the step classes so the UI can list them.
- */
 @Service
 public class StepCatalogService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StepCatalogService.class);
+
     private static final Map<String, Integer> TYPE_ORDER = Map.of(
             "GIVEN", 0,
             "WHEN", 1,
@@ -33,34 +31,73 @@ public class StepCatalogService {
     public List<StepDefinition> listStepDefinitions() {
         List<StepDefinition> steps = new ArrayList<>();
         List<Class<?>> stepClasses = List.of(WebGenericSteps.class, ServiceSteps.class);
+
         for (Class<?> stepClass : stepClasses) {
             extract(stepClass).ifPresent(steps::addAll);
         }
+
         return steps.stream()
-                .sorted(Comparator
-                        .comparingInt(def -> TYPE_ORDER.getOrDefault(def.type(), Integer.MAX_VALUE))
-                        .thenComparing(StepDefinition::pattern))
+                .sorted(
+                        Comparator
+                                .comparingInt((StepDefinition def) ->
+                                        TYPE_ORDER.getOrDefault(def.type(), Integer.MAX_VALUE)
+                                )
+                                .thenComparing(StepDefinition::pattern, Comparator.nullsLast(String::compareTo))
+                )
                 .toList();
     }
+
+    /**
+     * Compatibilidad total: funciona tanto para record como para clase POJO.
+     */
+    private String getType(StepDefinition def) {
+        try {
+            return (String) def.getClass().getMethod("type").invoke(def); // record
+        } catch (Exception ignored) {}
+        try {
+            return (String) def.getClass().getMethod("getType").invoke(def); // getter POJO
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    /**
+     * Compatibilidad total: soporta pattern() o getPattern().
+     */
+    private String getPattern(StepDefinition def) {
+        try {
+            return (String) def.getClass().getMethod("pattern").invoke(def); // record
+        } catch (Exception ignored) {}
+        try {
+            return (String) def.getClass().getMethod("getPattern").invoke(def); // getter POJO
+        } catch (Exception ignored) {}
+        return null;
+    }
+
 
     private Optional<List<StepDefinition>> extract(Class<?> stepClass) {
         try {
             List<StepDefinition> steps = new ArrayList<>();
+
             for (Method method : stepClass.getDeclaredMethods()) {
+
                 Dado dado = method.getAnnotation(Dado.class);
                 if (dado != null) {
                     steps.add(new StepDefinition("GIVEN", dado.value(), stepClass.getSimpleName()));
                 }
+
                 Cuando cuando = method.getAnnotation(Cuando.class);
                 if (cuando != null) {
                     steps.add(new StepDefinition("WHEN", cuando.value(), stepClass.getSimpleName()));
                 }
+
                 Entonces entonces = method.getAnnotation(Entonces.class);
                 if (entonces != null) {
                     steps.add(new StepDefinition("THEN", entonces.value(), stepClass.getSimpleName()));
                 }
             }
+
             return Optional.of(steps);
+
         } catch (Exception e) {
             LOGGER.error("Cannot extract steps from {}", stepClass.getSimpleName(), e);
             return Optional.empty();

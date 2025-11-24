@@ -83,8 +83,8 @@ public class RecorderScriptProvider {
     };
 
     try {
-      const url = config.baseUrl.replace(/\/+$/, '') + '/api/recorder/event';
-
+      const url = config.baseUrl.replace(/\\/+$/, '') + '/api/recorder/event';
+            
       await fetch(url, {
         method: 'POST',
         headers: {

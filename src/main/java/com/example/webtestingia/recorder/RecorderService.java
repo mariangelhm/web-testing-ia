@@ -154,7 +154,7 @@ public class RecorderService {
     private void injectRecorderScript(RecorderSession session, String baseUrl) {
         WebDriver driver = session.getWebDriver();
         if (!(driver instanceof JavascriptExecutor executor)) {
-            throw new BrowserException("El driver no soporta ejecución de JavaScript para inyectar el recorder");
+            throw new BrowserException("El driver no soporta ejecución de JavaScript para inyectar el recorder", null);
         }
         String script = recorderScriptProvider.buildScript(baseUrl, session.getSessionId(), session.getBrowserId());
         executor.executeScript(script);

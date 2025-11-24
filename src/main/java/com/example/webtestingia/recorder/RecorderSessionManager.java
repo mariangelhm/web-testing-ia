@@ -114,28 +114,6 @@ public class RecorderSessionManager {
         watcher.start();
     }
 
-    private boolean browserClosed(WebDriver driver) {
-        try {
-            return driver == null || driver.getWindowHandles().isEmpty();
-        } catch (org.openqa.selenium.NoSuchSessionException e) {
-            return true;
-        } catch (Exception e) {
-            LOGGER.debug("No se pudo verificar el estado del navegador", e);
-            return false;
-        }
-    }
-
-    private void closeSessionSafely(String sessionId) {
-        RecorderSession session = sesiones.remove(sessionId);
-        if (session == null) {
-            return;
-        }
-        try {
-            session.getWebDriver().quit();
-        } catch (Exception e) {
-            LOGGER.warn("Error al cerrar navegador de la sesión {} durante limpieza automática", sessionId, e);
-        }
-    }
 
     private void monitorLifecycle(String sessionId, WebDriver driver) {
         Thread watcher = new Thread(() -> {
