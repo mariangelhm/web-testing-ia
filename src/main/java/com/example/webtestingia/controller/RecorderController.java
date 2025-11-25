@@ -3,6 +3,9 @@ package com.example.webtestingia.controller;
 import com.example.webtestingia.model.ApiResponse;
 import com.example.webtestingia.recorder.RecorderService;
 import com.example.webtestingia.recorder.StepMapper;
+import com.example.webtestingia.model.exception.SessionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,18 +22,19 @@ import java.util.Map;
  * Controlador del grabador web multiusuario.
  */
 @CrossOrigin(
-        origins = {
-                "http://localhost:5173",
-                "http://127.0.0.1:5173"
-        },
+        // El recorder captura eventos desde el navegador automatizado, no desde un dominio fijo;
+        // permitimos cualquier origen para que los POST del script inyectado no sean bloqueados por CORS.
+        allowedOrigins = "*",
         allowedHeaders = "*",
         exposedHeaders = "*",
         methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
-        allowCredentials = "true"
+        allowCredentials = "false"
 )
 @RestController
 @RequestMapping("/api/recorder")
 public class RecorderController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RecorderController.class);
 
     private final RecorderService recorderService;
     private final StepMapper stepMapper;
@@ -63,24 +67,32 @@ public class RecorderController {
      * Devuelve los pasos acumulados de una sesión.
      */
     @GetMapping("/steps")
-    public ResponseEntity<Map<String, Object>> steps(@RequestParam String sessionId, @RequestParam String browserId) {
-        return ApiResponse.ok(recorderService.obtenerPasos(sessionId, browserId));
+    public ResponseEntity<Map<String, Object>> steps(@RequestParam(required = false) String sessionId,
+                                                    @RequestParam(required = false) String browserId) {
+        IdBundle ids = resolveIds(sessionId, browserId, null);
+        return ApiResponse.ok(recorderService.obtenerPasos(ids.sessionId, ids.browserId));
     }
 
     /**
      * Detiene la grabación, cierra el navegador y devuelve sugerencias.
      */
     @PostMapping("/stop")
-    public ResponseEntity<Map<String, Object>> stop(@RequestParam String sessionId, @RequestParam String browserId) {
-        return ApiResponse.ok(recorderService.finalizarSesion(sessionId, browserId));
+    public ResponseEntity<Map<String, Object>> stop(@RequestParam(required = false) String sessionId,
+                                                   @RequestParam(required = false) String browserId,
+                                                   @RequestBody(required = false) Map<String, Object> body) {
+        IdBundle ids = resolveIds(sessionId, browserId, body);
+        return ApiResponse.ok(recorderService.finalizarSesion(ids.sessionId, ids.browserId));
     }
 
     /**
      * Mantiene viva una sesión del recorder y valida que el navegador siga abierto.
      */
     @PostMapping("/ping")
-    public ResponseEntity<Map<String, Object>> ping(@RequestParam String sessionId, @RequestParam String browserId) {
-        return ApiResponse.ok(recorderService.ping(sessionId, browserId));
+    public ResponseEntity<Map<String, Object>> ping(@RequestParam(required = false) String sessionId,
+                                                   @RequestParam(required = false) String browserId,
+                                                   @RequestBody(required = false) Map<String, Object> body) {
+        IdBundle ids = resolveIds(sessionId, browserId, body);
+        return ApiResponse.ok(recorderService.ping(ids.sessionId, ids.browserId));
     }
 
     /**
@@ -90,4 +102,32 @@ public class RecorderController {
     public ResponseEntity<Map<String, Object>> availableSteps() {
         return ApiResponse.ok(Map.of("steps", stepMapper.getAvailableSteps()));
     }
+
+    private IdBundle resolveIds(String sessionIdParam, String browserIdParam, Map<String, Object> body) {
+        String resolvedSession = firstNonBlank(sessionIdParam, body, "sessionId");
+        String resolvedBrowser = firstNonBlank(browserIdParam, body, "browserId");
+
+        if (resolvedSession == null || resolvedBrowser == null) {
+            LOGGER.warn("Solicitud de recorder sin identificadores: sessionId={}, browserId={}, bodyKeys={}",
+                    sessionIdParam, browserIdParam, body != null ? body.keySet() : "null");
+            throw new SessionException("Faltan sessionId o browserId en la petición del recorder");
+        }
+
+        return new IdBundle(resolvedSession, resolvedBrowser);
+    }
+
+    private String firstNonBlank(String fromParam, Map<String, Object> body, String key) {
+        if (fromParam != null && !fromParam.isBlank()) {
+            return fromParam;
+        }
+        if (body != null && body.get(key) != null) {
+            String fromBody = String.valueOf(body.get(key));
+            if (!fromBody.isBlank()) {
+                return fromBody;
+            }
+        }
+        return null;
+    }
+
+    private record IdBundle(String sessionId, String browserId) {}
 }
