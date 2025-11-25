@@ -95,6 +95,10 @@ public class WebDriverFactory {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.addArguments("--disable-infobars");
+        // Permite realizar fetch http desde páginas https (Google, etc.) para que el recorder
+        // pueda enviar eventos al backend sin ser bloqueado por mixed content.
+        options.addArguments("--allow-running-insecure-content");
+        options.addArguments("--disable-web-security");
         options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
         options.setExperimentalOption("useAutomationExtension", false);
         return options;
@@ -104,6 +108,8 @@ public class WebDriverFactory {
         EdgeOptions options = new EdgeOptions();
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.addArguments("--disable-infobars");
+        options.addArguments("--allow-running-insecure-content");
+        options.addArguments("--disable-web-security");
         options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
         options.setExperimentalOption("useAutomationExtension", false);
         return options;
@@ -115,6 +121,9 @@ public class WebDriverFactory {
         options.addArguments("-height=1080");
         options.addPreference("dom.webdriver.enabled", false);
         options.addPreference("useAutomationExtension", false);
+        // Permite contenido mixto para que los POST del recorder no sean bloqueados desde HTTPS.
+        options.addPreference("security.mixed_content.block_active_content", false);
+        options.addPreference("security.mixed_content.block_display_content", false);
         return options;
     }
 
