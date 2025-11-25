@@ -19,14 +19,13 @@ import java.util.Map;
  * Controlador del grabador web multiusuario.
  */
 @CrossOrigin(
-        origins = {
-                "http://localhost:5173",
-                "http://127.0.0.1:5173"
-        },
+        // El recorder captura eventos desde el navegador automatizado, no desde un dominio fijo;
+        // permitimos cualquier origen para que los POST del script inyectado no sean bloqueados por CORS.
+        allowedOrigins = "*",
         allowedHeaders = "*",
         exposedHeaders = "*",
         methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
-        allowCredentials = "true"
+        allowCredentials = "false"
 )
 @RestController
 @RequestMapping("/api/recorder")
