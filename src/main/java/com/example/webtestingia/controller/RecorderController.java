@@ -21,7 +21,7 @@ import java.util.Map;
 @CrossOrigin(
         // El recorder captura eventos desde el navegador automatizado, no desde un dominio fijo;
         // permitimos cualquier origen para que los POST del script inyectado no sean bloqueados por CORS.
-        allowedOrigins = "*",
+        origins = "*",
         allowedHeaders = "*",
         exposedHeaders = "*",
         methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
