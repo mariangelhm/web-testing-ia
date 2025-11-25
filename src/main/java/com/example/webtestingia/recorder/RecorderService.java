@@ -68,7 +68,7 @@ public class RecorderService {
     /**
      * Procesa un evento y lo convierte en un paso.
      */
-    public void procesarEvento(String proyecto, String grupo, Map<String, Object> payload) {
+    public String procesarEvento(String proyecto, String grupo, Map<String, Object> payload) {
         String sessionId = stringValue(payload.get("sessionId"));
         String browserId = stringValue(payload.get("browserId"));
         String action = stringValue(payload.get("action"));
@@ -84,6 +84,7 @@ public class RecorderService {
 
         String step = stepMapper.mapEvent(proyecto, grupo, action, selector, text, value);
         sessionManager.addStep(sessionId, step);
+        return step;
     }
 
     /**
