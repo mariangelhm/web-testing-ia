@@ -59,8 +59,17 @@ public class RecorderController {
     public ResponseEntity<Map<String, Object>> event(@RequestBody Map<String, Object> payload,
                                                      @RequestParam(required = false) String proyecto,
                                                      @RequestParam(required = false) String grupo) {
-        recorderService.procesarEvento(proyecto, grupo, payload);
-        return ApiResponse.ok(Map.of("message", "Event processed"));
+        LOGGER.info("Llamada a /api/recorder/event recibida: proyecto={}, grupo={}, payload={}:", proyecto, grupo, payload);
+
+        String step = recorderService.procesarEvento(proyecto, grupo, payload);
+
+        Map<String, Object> response = Map.of(
+                "message", "Event processed",
+                "step", step
+        );
+
+        LOGGER.info("Respuesta /api/recorder/event: {}", response);
+        return ApiResponse.ok(response);
     }
 
     /**
